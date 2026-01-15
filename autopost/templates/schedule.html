@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule - AutoPost Hub{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-gray-50 dark:bg-gray-900">
+    {% include "sidebar.html" %}
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        {% include "header.html" %}
+
+        <main class="flex-1 overflow-y-auto">
+            <div class="container mx-auto px-4 py-8">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+                    <i class="fas fa-calendar-alt mr-2 text-indigo-600"></i>Schedule Posts
+                </h1>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Schedule Form -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
+                            <!-- Content -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                    <i class="fas fa-file-alt mr-2 text-indigo-600"></i>Post Content
+                                </label>
+                                <textarea id="schedule-content" required
+                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                    rows="8" placeholder="What do you want to share?"></textarea>
+                            </div>
+
+                            <!-- Image -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                    <i class="fas fa-image mr-2 text-indigo-600"></i>Attach Image
+                                </label>
+                                <input type="file" id="schedule-image" accept="image/*"
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+
+                            <!-- Schedule Time -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                        <i class="fas fa-calendar mr-2 text-indigo-600"></i>Date
+                                    </label>
+                                    <input type="date" id="schedule-date" required
+                                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                        <i class="fas fa-clock mr-2 text-indigo-600"></i>Time
+                                    </label>
+                                    <input type="time" id="schedule-time" required
+                                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                            </div>
+
+                            <!-- Timezone Info -->
+                            <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                <p class="text-sm text-blue-800 dark:text-blue-200">
+                                    <i class="fas fa-globe mr-2"></i>Times are stored in UTC and displayed in your local timezone
+                                </p>
+                            </div>
+
+                            <!-- Platforms -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                                    <i class="fas fa-share-alt mr-2 text-indigo-600"></i>Post To Platforms
+                                </label>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {% set platforms = ['linkedin', 'facebook', 'instagram', 'telegram', 'twitter'] %}
+                                    {% for platform in platforms %}
+                                    <label class="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition">
+                                        <input type="checkbox" name="schedule-platforms" value="{{ platform }}" class="rounded">
+                                        <span class="ml-2 font-semibold text-gray-700 dark:text-gray-300">{{ platform|title }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Submit -->
+                            <button type="button" id="schedule-submit"
+                                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center">
+                                <i class="fas fa-check mr-2"></i>Schedule Post
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Scheduled Posts List -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                            <i class="fas fa-list mr-2 text-indigo-600"></i>Scheduled Posts
+                        </h3>
+                        <div id="scheduled-list" class="space-y-3">
+                            {% for post in posts %}
+                            <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border-l-4 border-yellow-500">
+                                <p class="font-semibold text-gray-900 dark:text-white text-sm">{{ post.content[:40] }}...</p>
+                                <p class="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                                    <i class="fas fa-clock mr-1"></i>{{ post.scheduled_at.strftime('%Y-%m-%d %H:%M') }}
+                                </p>
+                                <div class="mt-2 flex gap-2 flex-wrap">
+                                    {% for platform in post.get_platforms() %}
+                                    <span class="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded">
+                                        {{ platform|title }}
+                                    </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% if not posts %}
+                            <p class="text-gray-500 dark:text-gray-400 text-sm text-center py-8">
+                                <i class="fas fa-inbox text-2xl opacity-20 block mb-2"></i>
+                                No scheduled posts
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+const scheduleSubmit = document.getElementById('schedule-submit');
+
+scheduleSubmit.addEventListener('click', async () => {
+    const content = document.getElementById('schedule-content').value;
+    const date = document.getElementById('schedule-date').value;
+    const time = document.getElementById('schedule-time').value;
+    const platforms = Array.from(document.querySelectorAll('input[name="schedule-platforms"]:checked')).map(el => el.value);
+    
+    if (!content || !date || !time || platforms.length === 0) {
+        alert('Please fill all fields and select at least one platform');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('content', content);
+    formData.append('scheduled_at', new Date(`${date}T${time}`).toISOString());
+    platforms.forEach(p => formData.append('platforms', p));
+    
+    const imageFile = document.getElementById('schedule-image').files[0];
+    if (imageFile) {
+        formData.append('image', imageFile);
+    }
+    
+    try {
+        const response = await fetch('/api/post/schedule', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            alert('Post scheduled successfully!');
+            location.reload();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + error.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error scheduling post');
+    }
+});
+</script>
+{% endblock %}
