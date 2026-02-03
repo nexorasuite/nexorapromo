@@ -75,17 +75,22 @@ class PostScheduler:
                 try:
                     service = PostingServiceFactory.get_service(platform)
                     
+                    # Prepare kwargs for service
+                    kwargs = {}
+                    if platform == 'facebook' and post.get_selected_pages():
+                        kwargs['selected_pages'] = post.get_selected_pages()
+                    
                     # Post based on content type
                     if post.image_path:
                         success = service.post_image(
                             caption=post.content,
                             image_path=post.image_path,
-                            user_id=post.user_id
+                            **kwargs
                         )
                     else:
                         success = service.post_text(
                             content=post.content,
-                            user_id=post.user_id
+                            **kwargs
                         )
                     
                     results[platform] = {

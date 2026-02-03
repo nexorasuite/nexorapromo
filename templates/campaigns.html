@@ -47,7 +47,19 @@
                                         <span class="ml-2 text-gray-700 dark:text-gray-300">{{ platform|title }}</span>
                                     </label>
                                     {% endfor %}
-                                </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Posting Interval</label>
+                                <select id="campaign-interval" 
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    <option value="0">Post all at once</option>
+                                    <option value="60">Every 1 hour</option>
+                                    <option value="120">Every 2 hours</option>
+                                    <option value="180">Every 3 hours</option>
+                                    <option value="360">Every 6 hours</option>
+                                    <option value="720">Every 12 hours</option>
+                                    <option value="1440">Every 24 hours</option>
+                                </select>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">How often to post campaign content</p>
                             </div>
                             <div class="flex gap-3">
                                 <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition">
@@ -99,7 +111,8 @@ campaignForm.addEventListener('submit', async (e) => {
     const data = {
         name: document.getElementById('campaign-name').value,
         description: document.getElementById('campaign-description').value,
-        platforms: Array.from(document.querySelectorAll('input[name="campaign-platforms"]:checked')).map(el => el.value)
+        platforms: Array.from(document.querySelectorAll('input[name="campaign-platforms"]:checked')).map(el => el.value),
+        posting_interval: parseInt(document.getElementById('campaign-interval').value)
     };
     
     if (data.platforms.length === 0) {
@@ -143,10 +156,18 @@ async function loadCampaigns() {
                 <div class="flex gap-2 mb-4 flex-wrap">
                     ${c.platforms.map(p => `<span class="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded">${p}</span>`).join('')}
                 </div>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">${c.post_count} posts</p>
-                <button onclick="addPostToCampaign(${c.id})" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition">
-                    <i class="fas fa-plus mr-2"></i>Add Post
-                </button>
+                <div class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    <p>${c.post_count} posts</p>
+                    <p>Interval: ${c.posting_interval === 0 ? 'All at once' : `Every ${c.posting_interval} minutes`}</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="addPostToCampaign(${c.id})" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition text-sm">
+                        <i class="fas fa-plus mr-1"></i>Add Post
+                    </button>
+                    <button onclick="scheduleCampaign(${c.id})" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition text-sm">
+                        <i class="fas fa-calendar mr-1"></i>Schedule
+                    </button>
+                </div>
             </div>
         `).join('');
     } catch (error) {
@@ -155,16 +176,135 @@ async function loadCampaigns() {
 }
 
 function addPostToCampaign(campaignId) {
-    const content = prompt('Enter post content:');
-    if (!content) return;
+    // Create a modal for adding posts with page selection
+    const modal = document.createElement('div');
+    modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
+    modal.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-lg w-full p-6">
+            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Add Post to Campaign</h3>
+            <form id="add-post-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Post Content</label>
+                    <textarea id="post-content" required rows="4" 
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                        placeholder="Enter your post content..."></textarea>
+                </div>
+                <div id="page-selection" class="hidden">
+                    <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">Select Facebook Pages</label>
+                    <div class="space-y-2 max-h-32 overflow-y-auto">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Loading pages...</p>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition">
+                        Add Post
+                    </button>
+                    <button type="button" id="cancel-post" class="flex-1 bg-gray-300 dark:bg-gray-700 text-gray-900 dark:text-white font-semibold py-2 rounded-lg transition">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    `;
     
-    fetch(`/api/campaigns/${campaignId}/posts`, {
+    document.body.appendChild(modal);
+    
+    // Load Facebook pages if Facebook is selected for this campaign
+    loadCampaignPlatforms(campaignId);
+    
+    // Handle form submission
+    document.getElementById('add-post-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const content = document.getElementById('post-content').value;
+        const selectedPages = Array.from(document.querySelectorAll('input[name="selected-pages"]:checked')).map(el => el.value);
+        
+        if (!content) {
+            alert('Please enter post content');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/campaigns/${campaignId}/posts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    content,
+                    selected_pages: selectedPages 
+                })
+            });
+            
+            if (response.ok) {
+                alert('Post added to campaign!');
+                document.body.removeChild(modal);
+                loadCampaigns();
+            } else {
+                const error = await response.json();
+                alert('Error: ' + error.error);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error adding post');
+        }
+    });
+    
+    // Handle cancel
+    document.getElementById('cancel-post').addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    });
+}
+
+async function loadCampaignPlatforms(campaignId) {
+    try {
+        const response = await fetch('/api/campaigns');
+        const campaigns = await response.json();
+        const campaign = campaigns.find(c => c.id === campaignId);
+        
+        if (campaign && campaign.platforms.includes('facebook')) {
+            // Load Facebook pages
+            const pagesResponse = await fetch('/api/platforms/status');
+            const status = await pagesResponse.json();
+            
+            if (status.facebook && status.facebook.connected && status.facebook.page_names) {
+                const pageSelection = document.getElementById('page-selection');
+                const pagesContainer = pageSelection.querySelector('.space-y-2');
+                
+                pagesContainer.innerHTML = status.facebook.page_names.map((name, index) => `
+                    <label class="flex items-center">
+                        <input type="checkbox" name="selected-pages" value="${status.facebook.page_ids[index]}" checked class="rounded">
+                        <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">${name}</span>
+                    </label>
+                `).join('');
+                
+                pageSelection.classList.remove('hidden');
+            }
+        }
+    } catch (error) {
+        console.error('Error loading campaign platforms:', error);
+    }
+}
+
+function scheduleCampaign(campaignId) {
+    const scheduledAt = prompt('Enter schedule date and time (YYYY-MM-DDTHH:MM):');
+    if (!scheduledAt) return;
+    
+    fetch(`/api/campaigns/${campaignId}/schedule`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content })
+        body: JSON.stringify({ scheduled_at: scheduledAt })
     }).then(r => r.json()).then(d => {
-        alert('Post added to campaign!');
-        loadCampaigns();
+        if (d.success) {
+            alert(`Campaign scheduled! ${d.scheduled_posts} posts will be posted.`);
+            loadCampaigns();
+        } else {
+            alert('Error: ' + d.error);
+        }
     }).catch(e => console.error('Error:', e));
 }
 

@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
+from flask import Blueprint, render_template, request, jsonify
 from database import db, Post
 
 history_bp = Blueprint('history', __name__)
@@ -6,11 +6,7 @@ history_bp = Blueprint('history', __name__)
 @history_bp.route('/history')
 def index():
     """Post history page"""
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
-    user_id = session['user_id']
-    posts = Post.query.filter_by(user_id=user_id).order_by(
+    posts = Post.query.order_by(
         Post.created_at.desc()
     ).paginate(page=request.args.get('page', 1, type=int), per_page=20)
     
@@ -19,13 +15,9 @@ def index():
 @history_bp.route('/api/posts', methods=['GET'])
 def get_posts():
     """Get posts with filtering"""
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-    
-    user_id = session['user_id']
     status = request.args.get('status')
     
-    query = Post.query.filter_by(user_id=user_id)
+    query = Post.query
     
     if status:
         query = query.filter_by(status=status)
@@ -45,13 +37,9 @@ def get_posts():
 @history_bp.route('/api/posts/<int:post_id>', methods=['GET', 'DELETE'])
 def post_detail(post_id):
     """Get or delete post"""
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-    
-    user_id = session['user_id']
     post = Post.query.get(post_id)
     
-    if not post or post.user_id != user_id:
+    if not post:
         return {'error': 'Post not found'}, 404
     
     if request.method == 'DELETE':

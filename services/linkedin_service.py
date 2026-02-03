@@ -7,7 +7,7 @@ class LinkedInService(BasePostingService):
     def __init__(self):
         super().__init__('linkedin')
     
-    def authenticate(self, user_id, credentials=None):
+    def authenticate(self, credentials=None):
         """
         Authenticate with LinkedIn
         
@@ -16,12 +16,12 @@ class LinkedInService(BasePostingService):
         - Store access tokens securely
         - Handle token refresh
         """
-        cred = self._get_credentials(user_id)
+        cred = self._get_credentials()
         if cred and cred.is_active:
             return True
         return False
     
-    def post_text(self, content, user_id, **kwargs):
+    def post_text(self, content, **kwargs):
         """
         Post text content to LinkedIn
         
@@ -31,7 +31,7 @@ class LinkedInService(BasePostingService):
         - Handle hashtags
         """
         try:
-            cred = self._get_credentials(user_id)
+            cred = self._get_credentials()
             if not cred or not cred.is_active:
                 return False
             
@@ -49,7 +49,7 @@ class LinkedInService(BasePostingService):
             print(f"LinkedIn post_text error: {e}")
             return False
     
-    def post_image(self, caption, image_path, user_id, **kwargs):
+    def post_image(self, caption, image_path, **kwargs):
         """
         Post image with caption to LinkedIn
         
@@ -62,7 +62,7 @@ class LinkedInService(BasePostingService):
             if not os.path.exists(image_path):
                 return False
             
-            cred = self._get_credentials(user_id)
+            cred = self._get_credentials()
             if not cred or not cred.is_active:
                 return False
             
@@ -81,9 +81,9 @@ class LinkedInService(BasePostingService):
             print(f"LinkedIn post_image error: {e}")
             return False
     
-    def get_status(self, user_id):
+    def get_status(self):
         """Get LinkedIn connection status"""
-        cred = self._get_credentials(user_id)
+        cred = self._get_credentials()
         return {
             'connected': cred is not None and cred.is_active,
             'platform': 'linkedin',

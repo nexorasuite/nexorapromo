@@ -7,7 +7,7 @@ class TelegramService(BasePostingService):
     def __init__(self):
         super().__init__('telegram')
     
-    def authenticate(self, user_id, credentials=None):
+    def authenticate(self, credentials=None):
         """
         Authenticate with Telegram
         
@@ -16,12 +16,12 @@ class TelegramService(BasePostingService):
         - Validate token and channel access
         - Store channel ID
         """
-        cred = self._get_credentials(user_id)
+        cred = self._get_credentials()
         if cred and cred.is_active:
             return True
         return False
     
-    def post_text(self, content, user_id, **kwargs):
+    def post_text(self, content, **kwargs):
         """
         Post text content to Telegram
         
@@ -31,7 +31,7 @@ class TelegramService(BasePostingService):
         - Support inline links
         """
         try:
-            cred = self._get_credentials(user_id)
+            cred = self._get_credentials()
             if not cred or not cred.is_active:
                 return False
             
@@ -54,7 +54,7 @@ class TelegramService(BasePostingService):
             print(f"Telegram post_text error: {e}")
             return False
     
-    def post_image(self, caption, image_path, user_id, **kwargs):
+    def post_image(self, caption, image_path, **kwargs):
         """
         Post image with caption to Telegram
         
@@ -67,7 +67,7 @@ class TelegramService(BasePostingService):
             if not os.path.exists(image_path):
                 return False
             
-            cred = self._get_credentials(user_id)
+            cred = self._get_credentials()
             if not cred or not cred.is_active:
                 return False
             
@@ -92,9 +92,9 @@ class TelegramService(BasePostingService):
             print(f"Telegram post_image error: {e}")
             return False
     
-    def get_status(self, user_id):
+    def get_status(self):
         """Get Telegram connection status"""
-        cred = self._get_credentials(user_id)
+        cred = self._get_credentials()
         return {
             'connected': cred is not None and cred.is_active,
             'platform': 'telegram',

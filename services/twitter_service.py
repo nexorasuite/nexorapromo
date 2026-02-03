@@ -7,7 +7,7 @@ class TwitterService(BasePostingService):
     def __init__(self):
         super().__init__('twitter')
     
-    def authenticate(self, user_id, credentials=None):
+    def authenticate(self, credentials=None):
         """
         Authenticate with Twitter/X
         
@@ -16,12 +16,12 @@ class TwitterService(BasePostingService):
         - Store access tokens
         - Handle elevated access
         """
-        cred = self._get_credentials(user_id)
+        cred = self._get_credentials()
         if cred and cred.is_active:
             return True
         return False
     
-    def post_text(self, content, user_id, **kwargs):
+    def post_text(self, content, **kwargs):
         """
         Post text content to Twitter/X
         
@@ -31,7 +31,7 @@ class TwitterService(BasePostingService):
         - Support hashtags and mentions
         """
         try:
-            cred = self._get_credentials(user_id)
+            cred = self._get_credentials()
             if not cred or not cred.is_active:
                 return False
             
@@ -58,7 +58,7 @@ class TwitterService(BasePostingService):
             print(f"Twitter post_text error: {e}")
             return False
     
-    def post_image(self, caption, image_path, user_id, **kwargs):
+    def post_image(self, caption, image_path, **kwargs):
         """
         Post image with caption to Twitter/X
         
@@ -71,7 +71,7 @@ class TwitterService(BasePostingService):
             if not os.path.exists(image_path):
                 return False
             
-            cred = self._get_credentials(user_id)
+            cred = self._get_credentials()
             if not cred or not cred.is_active:
                 return False
             
@@ -90,9 +90,9 @@ class TwitterService(BasePostingService):
             print(f"Twitter post_image error: {e}")
             return False
     
-    def get_status(self, user_id):
+    def get_status(self):
         """Get Twitter connection status"""
-        cred = self._get_credentials(user_id)
+        cred = self._get_credentials()
         return {
             'connected': cred is not None and cred.is_active,
             'platform': 'twitter',

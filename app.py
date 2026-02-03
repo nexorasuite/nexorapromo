@@ -4,7 +4,6 @@ from datetime import timedelta
 from config import config
 from database import db, init_db
 from scheduler import init_scheduler
-from routes.auth import auth_bp
 from routes.dashboard import dashboard_bp
 from routes.composer import composer_bp
 from routes.campaigns import campaigns_bp
@@ -32,7 +31,6 @@ def create_app(config_obj=None):
     db.init_app(app)
     
     # Register blueprints
-    app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(composer_bp)
     app.register_blueprint(campaigns_bp)

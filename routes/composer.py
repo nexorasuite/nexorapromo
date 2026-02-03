@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
-from database import db, Post, PostTemplate, User
+from flask import Blueprint, render_template, request, jsonify, current_app
+from database import db, Post, PostTemplate
 from datetime import datetime
 from werkzeug.utils import secure_filename
 import os
@@ -9,22 +9,14 @@ composer_bp = Blueprint('composer', __name__)
 @composer_bp.route('/compose')
 def compose():
     """Compose page"""
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
-    user_id = session['user_id']
-    templates = PostTemplate.query.filter_by(user_id=user_id).all()
+    templates = PostTemplate.query.all()
     
     return render_template('compose.html', templates=templates)
 
 @composer_bp.route('/schedule')
 def schedule():
     """Schedule page"""
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
-    user_id = session['user_id']
-    posts = Post.query.filter_by(user_id=user_id, status='pending').order_by(
+    posts = Post.query.filter_by(status='pending').order_by(
         Post.scheduled_at
     ).all()
     
@@ -33,11 +25,6 @@ def schedule():
 @composer_bp.route('/api/post/manual', methods=['POST'])
 def post_manual():
     """Create manual post"""
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-    
-    user_id = session['user_id']
-    
     content = request.form.get('content')
     platforms = request.form.getlist('platforms')
     save_as_template = request.form.get('save_template') == 'true'
@@ -57,12 +44,11 @@ def post_manual():
             filename = secure_filename(file.filename)
             upload_dir = current_app.config['UPLOAD_FOLDER']
             os.makedirs(upload_dir, exist_ok=True)
-            image_path = os.path.join(upload_dir, f"{user_id}_{datetime.utcnow().timestamp()}_{filename}")
+            image_path = os.path.join(upload_dir, f"{datetime.utcnow().timestamp()}_{filename}")
             file.save(image_path)
     
     # Create post
     post = Post(
-        user_id=user_id,
         content=content,
         image_path=image_path,
         status='posted',
@@ -76,7 +62,6 @@ def post_manual():
     # Save as template if requested
     if save_as_template and template_name:
         template = PostTemplate(
-            user_id=user_id,
             name=template_name,
             content=content,
             image_path=image_path
@@ -89,11 +74,6 @@ def post_manual():
 @composer_bp.route('/api/post/schedule', methods=['POST'])
 def post_schedule():
     """Schedule a post"""
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-    
-    user_id = session['user_id']
-    
     content = request.form.get('content')
     platforms = request.form.getlist('platforms')
     scheduled_at_str = request.form.get('scheduled_at')
@@ -120,12 +100,11 @@ def post_schedule():
             filename = secure_filename(file.filename)
             upload_dir = current_app.config['UPLOAD_FOLDER']
             os.makedirs(upload_dir, exist_ok=True)
-            image_path = os.path.join(upload_dir, f"{user_id}_{datetime.utcnow().timestamp()}_{filename}")
+            image_path = os.path.join(upload_dir, f"{datetime.utcnow().timestamp()}_{filename}")
             file.save(image_path)
     
     # Create scheduled post
     post = Post(
-        user_id=user_id,
         content=content,
         image_path=image_path,
         status='pending',
@@ -141,13 +120,8 @@ def post_schedule():
 @composer_bp.route('/api/templates', methods=['GET', 'POST'])
 def templates():
     """Manage post templates"""
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-    
-    user_id = session['user_id']
-    
     if request.method == 'GET':
-        templates = PostTemplate.query.filter_by(user_id=user_id).all()
+        templates = PostTemplate.query.all()
         return jsonify([{
             'id': t.id,
             'name': t.name,
@@ -163,12 +137,11 @@ def templates():
         return {'error': 'Name and content required'}, 400
     
     # Check if template name already exists
-    existing = PostTemplate.query.filter_by(user_id=user_id, name=name).first()
+    existing = PostTemplate.query.filter_by(name=name).first()
     if existing:
         return {'error': 'Template name already exists'}, 400
     
     template = PostTemplate(
-        user_id=user_id,
         name=name,
         content=content
     )

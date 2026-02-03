@@ -11,9 +11,9 @@ class FacebookService(BasePostingService):
         self.api_version = 'v18.0'
         self.base_url = f'https://graph.facebook.com/{self.api_version}'
     
-    def _get_pages(self, user_id):
+    def _get_pages(self):
         """Get all pages and their tokens"""
-        cred = self._get_credentials(user_id)
+        cred = self._get_credentials()
         if not cred or not cred.is_active:
             return {}
         
@@ -24,12 +24,12 @@ class FacebookService(BasePostingService):
         except:
             return {}
     
-    def authenticate(self, user_id, credentials=None):
+    def authenticate(self, credentials=None):
         """
         Authenticate with Facebook
         Verifies at least one page token is valid
         """
-        pages = self._get_pages(user_id)
+        pages = self._get_pages()
         if not pages:
             return False
         
@@ -48,19 +48,27 @@ class FacebookService(BasePostingService):
             print(f"Facebook auth error: {e}")
             return False
     
-    def post_text(self, content, user_id, **kwargs):
+    def post_text(self, content, **kwargs):
         """
-        Post text content to all connected Facebook pages
+        Post text content to all connected Facebook pages or selected pages
         """
-        pages = self._get_pages(user_id)
-        if not pages:
+        selected_pages = kwargs.get('selected_pages')
+        if selected_pages:
+            # Post only to selected pages
+            pages = self._get_pages()
+            pages_to_post = {pid: pages[pid] for pid in selected_pages if pid in pages}
+        else:
+            # Post to all pages
+            pages_to_post = self._get_pages()
+        
+        if not pages_to_post:
             print(f"[Facebook] Error: No pages configured")
             return False
         
         results = {}
         success_count = 0
         
-        for page_id, page_info in pages.items():
+        for page_id, page_info in pages_to_post.items():
             try:
                 page_name = page_info.get('name', 'Unknown')
                 page_token = page_info.get('token')
@@ -96,23 +104,31 @@ class FacebookService(BasePostingService):
         # Return True if at least one post succeeded
         return success_count > 0
     
-    def post_image(self, caption, image_path, user_id, **kwargs):
+    def post_image(self, caption, image_path, **kwargs):
         """
-        Post image with caption to all connected Facebook pages
+        Post image with caption to all connected Facebook pages or selected pages
         """
         if not os.path.exists(image_path):
             print(f"[Facebook] Error: Image file not found: {image_path}")
             return False
         
-        pages = self._get_pages(user_id)
-        if not pages:
+        selected_pages = kwargs.get('selected_pages')
+        if selected_pages:
+            # Post only to selected pages
+            pages = self._get_pages()
+            pages_to_post = {pid: pages[pid] for pid in selected_pages if pid in pages}
+        else:
+            # Post to all pages
+            pages_to_post = self._get_pages()
+        
+        if not pages_to_post:
             print(f"[Facebook] Error: No pages configured")
             return False
         
         results = {}
         success_count = 0
         
-        for page_id, page_info in pages.items():
+        for page_id, page_info in pages_to_post.items():
             try:
                 page_name = page_info.get('name', 'Unknown')
                 page_token = page_info.get('token')
@@ -151,16 +167,17 @@ class FacebookService(BasePostingService):
         # Return True if at least one post succeeded
         return success_count > 0
     
-    def get_status(self, user_id):
+    def get_status(self):
         """Get connection status for all pages"""
-        pages = self._get_pages(user_id)
+        pages = self._get_pages()
         if not pages:
             return {'connected': False, 'platform': 'facebook', 'pages': 0}
         
-        is_auth = self.authenticate(user_id)
+        is_auth = self.authenticate()
         return {
             'connected': is_auth,
             'platform': 'facebook',
             'pages': len(pages),
-            'page_names': [p.get('name', 'Unknown') for p in pages.values()]
+            'page_names': [p.get('name', 'Unknown') for p in pages.values()],
+            'page_ids': list(pages.keys())
         }

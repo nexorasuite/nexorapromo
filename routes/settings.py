@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
-from database import db, User, PlatformCredential
+from flask import Blueprint, render_template, request, jsonify
+from database import db, PlatformCredential
 from services.factory import PostingServiceFactory
 
 settings_bp = Blueprint('settings', __name__)
@@ -7,32 +7,22 @@ settings_bp = Blueprint('settings', __name__)
 @settings_bp.route('/settings')
 def index():
     """Settings page"""
-    if 'user_id' not in session:
-        return redirect(url_for('auth.login'))
-    
-    user_id = session['user_id']
-    user = User.query.get(user_id)
-    
     platforms = PostingServiceFactory.get_platform_config()
-    credentials = PlatformCredential.query.filter_by(user_id=user_id).all()
+    credentials = PlatformCredential.query.all()
     
     cred_map = {c.platform: c for c in credentials}
     
-    return render_template('settings.html', user=user, platforms=platforms, credentials=cred_map)
+    return render_template('settings.html', platforms=platforms, credentials=cred_map)
 
 @settings_bp.route('/api/platforms/status', methods=['GET'])
 def platform_status():
     """Get platform connection status"""
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-    
-    user_id = session['user_id']
     statuses = {}
     
     for platform in PostingServiceFactory.get_all_platforms():
         try:
             service = PostingServiceFactory.get_service(platform)
-            statuses[platform] = service.get_status(user_id)
+            statuses[platform] = service.get_status()
         except Exception as e:
             statuses[platform] = {
                 'connected': False,
@@ -45,16 +35,10 @@ def platform_status():
 @settings_bp.route('/api/platforms/<platform>/credentials', methods=['POST', 'GET', 'DELETE'])
 def manage_credentials(platform):
     """Manage platform credentials"""
-    if 'user_id' not in session:
-        return {'error': 'Unauthorized'}, 401
-    
-    user_id = session['user_id']
-    
     if platform not in PostingServiceFactory.get_all_platforms():
         return {'error': 'Invalid platform'}, 400
     
     cred = PlatformCredential.query.filter_by(
-        user_id=user_id,
         platform=platform
     ).first()
     
@@ -79,7 +63,6 @@ def manage_credentials(platform):
     
     if not cred:
         cred = PlatformCredential(
-            user_id=user_id,
             platform=platform
         )
         db.session.add(cred)
