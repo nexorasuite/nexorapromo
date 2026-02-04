@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Compose - AutoPost Hub{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-gray-50 dark:bg-gray-900">
+    {% include "sidebar.html" %}
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        {% include "header.html" %}
+
+        <main class="flex-1 overflow-y-auto">
+            <div class="container mx-auto px-4 py-8">
+                <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+                    <i class="fas fa-pen-fancy mr-2 text-indigo-600"></i>Compose Post
+                </h1>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Compose Form -->
+                    <div class="lg:col-span-2">
+                        <form id="compose-form" class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
+                            <!-- Content -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                    <i class="fas fa-file-alt mr-2 text-indigo-600"></i>Post Content
+                                </label>
+                                <textarea id="content" name="content" required
+                                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                                    rows="8" placeholder="What do you want to share?"></textarea>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                                    <span id="char-count">0</span>/2800 characters
+                                </p>
+                            </div>
+
+                            <!-- Image Upload -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                                    <i class="fas fa-image mr-2 text-indigo-600"></i>Attach Image (Optional)
+                                </label>
+                                <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-indigo-500 transition"
+                                    id="drop-zone">
+                                    <input type="file" name="image" id="image" accept="image/*" class="hidden">
+                                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+                                    <p class="text-gray-700 dark:text-gray-300 font-semibold">Drop image here or click</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">PNG, JPG, GIF up to 16MB</p>
+                                    <img id="preview" class="max-h-64 mx-auto mt-4 hidden rounded-lg">
+                                </div>
+                            </div>
+
+                            <!-- Platforms -->
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-3">
+                                    <i class="fas fa-share-alt mr-2 text-indigo-600"></i>Post To Platforms
+                                </label>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                    {% set platforms = ['linkedin', 'facebook', 'instagram', 'telegram', 'twitter'] %}
+                                    {% for platform in platforms %}
+                                    <label class="flex items-center p-3 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition">
+                                        <input type="checkbox" name="platforms" value="{{ platform }}" class="rounded">
+                                        <span class="ml-2 font-semibold text-gray-700 dark:text-gray-300">{{ platform|title }}</span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <!-- Save as Template -->
+                            <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                                <label class="flex items-center mb-4">
+                                    <input type="checkbox" id="save-template" name="save_template" class="rounded">
+                                    <span class="ml-2 font-semibold text-gray-700 dark:text-gray-300">Save as Template</span>
+                                </label>
+                                <input type="text" id="template-name" name="template_name" placeholder="Template name..."
+                                    class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 hidden">
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+                                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition flex items-center justify-center">
+                                    <i class="fas fa-paper-plane mr-2"></i>Post Now
+                                </button>
+                                <button type="button" id="save-draft" class="px-6 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-900 dark:text-white font-semibold py-3 rounded-lg transition">
+                                    <i class="fas fa-save mr-2"></i>Draft
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Preview & Templates Sidebar -->
+                    <div class="space-y-6">
+                        <!-- Preview -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                                <i class="fas fa-eye mr-2 text-indigo-600"></i>Preview
+                            </h3>
+                            <div id="preview-box" class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg min-h-32">
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Preview will appear here...</p>
+                            </div>
+                        </div>
+
+                        <!-- Templates -->
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">
+                                <i class="fas fa-list mr-2 text-indigo-600"></i>Templates
+                            </h3>
+                            <div id="templates-list" class="space-y-2">
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Loading templates...</p>
+                            </div>
+                        </div>
+
+                        <!-- Platform Info -->
+                        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                            <h4 class="font-semibold text-blue-900 dark:text-blue-200 mb-2">
+                                <i class="fas fa-info-circle mr-2"></i>Tips
+                            </h4>
+                            <ul class="text-xs text-blue-800 dark:text-blue-300 space-y-1">
+                                <li>• Twitter/X has a 280 character limit</li>
+                                <li>• Use hashtags for better reach</li>
+                                <li>• Images increase engagement</li>
+                                <li>• Schedule during peak hours</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+const form = document.getElementById('compose-form');
+const contentInput = document.getElementById('content');
+const charCount = document.getElementById('char-count');
+const previewBox = document.getElementById('preview-box');
+const saveTemplate = document.getElementById('save-template');
+const templateName = document.getElementById('template-name');
+const templatesList = document.getElementById('templates-list');
+const dropZone = document.getElementById('drop-zone');
+const imageInput = document.getElementById('image');
+const preview = document.getElementById('preview');
+
+// Character count
+contentInput.addEventListener('input', () => {
+    charCount.textContent = contentInput.value.length;
+    updatePreview();
+});
+
+// Preview
+function updatePreview() {
+    previewBox.innerHTML = `<p class="text-gray-700 dark:text-gray-300">${contentInput.value || 'Your post content will appear here...'}</p>`;
+}
+
+// Save as template toggle
+saveTemplate.addEventListener('change', () => {
+    templateName.classList.toggle('hidden', !saveTemplate.checked);
+});
+
+// Load templates
+async function loadTemplates() {
+    try {
+        const response = await fetch('/api/templates');
+        const templates = await response.json();
+        
+        if (templates.length === 0) {
+            templatesList.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No templates yet</p>';
+            return;
+        }
+        
+        templatesList.innerHTML = templates.map(t => `
+            <button type="button" class="w-full text-left p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition" onclick="loadTemplate('${t.id}', '${t.name}')">
+                <p class="font-semibold text-gray-700 dark:text-gray-300">${t.name}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">${t.content.substring(0, 40)}...</p>
+            </button>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading templates:', error);
+    }
+}
+
+function loadTemplate(id, name) {
+    // Implement template loading
+    console.log('Load template:', name);
+}
+
+// Image upload
+dropZone.addEventListener('click', () => imageInput.click());
+
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.classList.add('border-indigo-500');
+});
+
+dropZone.addEventListener('dragleave', () => {
+    dropZone.classList.remove('border-indigo-500');
+});
+
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('border-indigo-500');
+    const files = e.dataTransfer.files;
+    if (files[0]) {
+        imageInput.files = files;
+        showImagePreview();
+    }
+});
+
+imageInput.addEventListener('change', showImagePreview);
+
+function showImagePreview() {
+    const file = imageInput.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            preview.src = e.target.result;
+            preview.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Form submission
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch('/api/post/manual', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            alert('Post created successfully!');
+            form.reset();
+            preview.classList.add('hidden');
+            updatePreview();
+        } else {
+            const error = await response.json();
+            alert('Error: ' + error.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error creating post');
+    }
+});
+
+// Draft button
+document.getElementById('save-draft').addEventListener('click', () => {
+    alert('Draft feature coming soon!');
+});
+
+// Load templates on page load
+loadTemplates();
+</script>
+{% endblock %}
