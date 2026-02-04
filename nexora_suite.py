@@ -3,6 +3,7 @@ import requests, time, random, os, json
 from threading import Event
 
 stop_event = Event()
+LOOP = True  # Set to False to stop after one cycle
 ACCESS_TOKEN = "EAAT3Q4oZCLo0BQjTSQXZB7w2FDaIjWkHWhYeW1GI5YoDYYWilYiP6FhZC8RUz2UQaZCfNp5lSpIIfgZB3ThWuLIdine7qZB1QhYHaZCDsl5w0FZA6dZCYNZC3tGyHZCsH6xYRxupxIGx5Pq66YBFkx0h5umTHJuGLgrGHyCCq83YlSvc6jPgExp2ZBEDazStFoRtBAZDZD"
 PAGE_ID = "967550829768297"
 IMAGE_FOLDER = "images"
@@ -34,7 +35,10 @@ def run_nz():
             if stop_event.is_set():
                 break
             post_on_facebook(post["message"], post["image_filename"])
-            time.sleep(POST_INTERVAL)
+            delay_seconds = int(post.get("delay", "10")) * 60
+            time.sleep(delay_seconds)
+        if not LOOP:
+            break
 
 def stop_nz():
     stop_event.set()

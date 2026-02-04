@@ -114,6 +114,85 @@
                                 <a href="{{ url_for('campaigns.index') }}" class="block w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition text-center">
                                     <i class="fas fa-rocket mr-2"></i>Campaign
                                 </a>
+                                <a href="{{ url_for('automated') }}" class="block w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition text-center">
+                                    <i class="fas fa-robot mr-2"></i>Automated
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Automated Posting Control -->
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-bold text-gray-900 dark:text-white">
+                            <i class="fas fa-robot mr-2 text-green-600"></i>Automated Posting Control
+                        </h2>
+                        <a href="{{ url_for('automated') }}" class="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 text-sm font-medium">
+                            <i class="fas fa-external-link-alt mr-1"></i>Full Control Panel
+                        </a>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Instagram Sync -->
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Instagram Sync</h3>
+                                <div id="insta-status" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Auto-post Facebook photos to Instagram</p>
+                            <div class="flex gap-2">
+                                <button id="insta-start" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                                    <i class="fas fa-play mr-1"></i>Start
+                                </button>
+                                <button id="insta-stop" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm" disabled>
+                                    <i class="fas fa-stop mr-1"></i>Stop
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Suite Posts -->
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Suite Posts</h3>
+                                <div id="suite-status" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Automated posting to Visa Suite</p>
+                            <div class="mb-3">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="suite-loop" class="rounded">
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Loop infinitely</span>
+                                </label>
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="suite-start" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                                    <i class="fas fa-play mr-1"></i>Start
+                                </button>
+                                <button id="suite-stop" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm" disabled>
+                                    <i class="fas fa-stop mr-1"></i>Stop
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Investments Posts -->
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Investments Posts</h3>
+                                <div id="investments-status" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Automated posting to Tour Investments</p>
+                            <div class="mb-3">
+                                <label class="flex items-center">
+                                    <input type="checkbox" id="investments-loop" class="rounded" checked>
+                                    <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Loop infinitely</span>
+                                </label>
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="investments-start" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                                    <i class="fas fa-play mr-1"></i>Start
+                                </button>
+                                <button id="investments-stop" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm" disabled>
+                                    <i class="fas fa-stop mr-1"></i>Stop
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -220,5 +299,78 @@ const activityChart = new Chart(document.getElementById('activityChart'), {
         }
     }
 });
+
+// Automated Posting Control
+async function updateStatus() {
+    try {
+        const response = await fetch('/api/status');
+        const status = await response.json();
+        
+        // Update status indicators
+        document.getElementById('insta-status').className = `w-3 h-3 rounded-full ${status.insta_running ? 'bg-green-500' : 'bg-gray-400'}`;
+        document.getElementById('suite-status').className = `w-3 h-3 rounded-full ${status.suite_running ? 'bg-green-500' : 'bg-gray-400'}`;
+        document.getElementById('investments-status').className = `w-3 h-3 rounded-full ${status.investments_running ? 'bg-green-500' : 'bg-gray-400'}`;
+        
+        // Update buttons
+        document.getElementById('insta-start').disabled = status.insta_running;
+        document.getElementById('insta-stop').disabled = !status.insta_running;
+        document.getElementById('suite-start').disabled = status.suite_running;
+        document.getElementById('suite-stop').disabled = !status.suite_running;
+        document.getElementById('investments-start').disabled = status.investments_running;
+        document.getElementById('investments-stop').disabled = !status.investments_running;
+        
+        // Update loop checkboxes
+        document.getElementById('suite-loop').checked = status.suite_loop;
+        document.getElementById('investments-loop').checked = status.investments_loop;
+    } catch (error) {
+        console.error('Error updating status:', error);
+    }
+}
+
+// Control functions
+async function controlPosting(action, category) {
+    try {
+        const response = await fetch(`/api/control/${action}/${category}`, { method: 'POST' });
+        const result = await response.json();
+        if (response.ok) {
+            updateStatus();
+        } else {
+            alert(`Error: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function setLoop(category) {
+    const checkbox = document.getElementById(`${category}-loop`);
+    try {
+        const response = await fetch(`/api/loop/${category}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ loop: checkbox.checked })
+        });
+        await response.json();
+    } catch (error) {
+        console.error('Error setting loop:', error);
+    }
+}
+
+// Event listeners
+document.getElementById('insta-start').addEventListener('click', () => controlPosting('start', 'insta'));
+document.getElementById('insta-stop').addEventListener('click', () => controlPosting('stop', 'insta'));
+document.getElementById('suite-start').addEventListener('click', () => controlPosting('start', 'suite'));
+document.getElementById('suite-stop').addEventListener('click', () => controlPosting('stop', 'suite'));
+document.getElementById('investments-start').addEventListener('click', () => controlPosting('start', 'investments'));
+document.getElementById('investments-stop').addEventListener('click', () => controlPosting('stop', 'investments'));
+
+document.getElementById('suite-loop').addEventListener('change', () => setLoop('suite'));
+document.getElementById('investments-loop').addEventListener('change', () => setLoop('investments'));
+
+// Initial status update
+updateStatus();
+
+// Update status every 5 seconds
+setInterval(updateStatus, 5000);
 </script>
 {% endblock %}

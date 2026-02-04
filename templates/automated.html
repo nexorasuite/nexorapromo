@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block title %}Automated Posts - AutoPost Hub{% endblock %}
+
+{% block content %}
+<div class="flex h-screen bg-gray-50 dark:bg-gray-900">
+    {% include "sidebar.html" %}
+
+    <div class="flex-1 flex flex-col overflow-hidden">
+        {% include "header.html" %}
+
+        <main class="flex-1 overflow-y-auto">
+            <div class="container mx-auto px-4 py-8">
+                <div class="flex items-center justify-between mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+                        <i class="fas fa-robot mr-2 text-green-600"></i>Automated Posts
+                    </h1>
+                    <div class="flex gap-4">
+                        <button id="control-all-start" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                            <i class="fas fa-play mr-2"></i>Start All
+                        </button>
+                        <button id="control-all-stop" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                            <i class="fas fa-stop mr-2"></i>Stop All
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Automated Posting Control -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Instagram Sync -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Instagram Sync</h3>
+                            <div id="insta-status" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Auto-post Facebook photos to Instagram</p>
+                        <div class="flex gap-2 mb-3">
+                            <button id="insta-start" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                                <i class="fas fa-play mr-1"></i>Start
+                            </button>
+                            <button id="insta-stop" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm" disabled>
+                                <i class="fas fa-stop mr-1"></i>Stop
+                            </button>
+                        </div>
+                        <button onclick="managePosts('insta')" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                            <i class="fas fa-cog mr-1"></i>Manage Posts
+                        </button>
+                    </div>
+
+                    <!-- Suite Posts -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Suite Posts</h3>
+                            <div id="suite-status" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Automated posting to Visa Suite</p>
+                        <div class="mb-3">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="suite-loop" class="rounded">
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Loop infinitely</span>
+                            </label>
+                        </div>
+                        <div class="flex gap-2 mb-3">
+                            <button id="suite-start" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                                <i class="fas fa-play mr-1"></i>Start
+                            </button>
+                            <button id="suite-stop" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm" disabled>
+                                <i class="fas fa-stop mr-1"></i>Stop
+                            </button>
+                        </div>
+                        <button onclick="managePosts('suite')" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                            <i class="fas fa-cog mr-1"></i>Manage Posts
+                        </button>
+                    </div>
+
+                    <!-- Investments Posts -->
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Investments Posts</h3>
+                            <div id="investments-status" class="w-3 h-3 rounded-full bg-gray-400"></div>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Automated posting to Tour Investments</p>
+                        <div class="mb-3">
+                            <label class="flex items-center">
+                                <input type="checkbox" id="investments-loop" class="rounded" checked>
+                                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">Loop infinitely</span>
+                            </label>
+                        </div>
+                        <div class="flex gap-2 mb-3">
+                            <button id="investments-start" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                                <i class="fas fa-play mr-1"></i>Start
+                            </button>
+                            <button id="investments-stop" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm" disabled>
+                                <i class="fas fa-stop mr-1"></i>Stop
+                            </button>
+                        </div>
+                        <button onclick="managePosts('investments')" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-3 rounded-lg transition text-sm">
+                            <i class="fas fa-cog mr-1"></i>Manage Posts
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Suite Posts</p>
+                                <p id="suite-count" class="text-2xl font-bold text-gray-900 dark:text-white">-</p>
+                            </div>
+                            <div class="text-blue-600 text-3xl opacity-20">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Investments Posts</p>
+                                <p id="investments-count" class="text-2xl font-bold text-gray-900 dark:text-white">-</p>
+                            </div>
+                            <div class="text-green-600 text-3xl opacity-20">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Instagram Posts</p>
+                                <p id="insta-count" class="text-2xl font-bold text-gray-900 dark:text-white">-</p>
+                            </div>
+                            <div class="text-purple-600 text-3xl opacity-20">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-600 dark:text-gray-400 text-sm">Active Loops</p>
+                                <p id="active-loops" class="text-2xl font-bold text-gray-900 dark:text-white">-</p>
+                            </div>
+                            <div class="text-orange-600 text-3xl opacity-20">
+                                <i class="fas fa-sync"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Manage Posts Modal -->
+<div id="posts-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                    <i class="fas fa-list mr-2 text-indigo-600"></i>Manage <span id="modal-category-title"></span> Posts
+                </h2>
+                <button id="close-posts-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="mb-4 flex justify-between items-center">
+                <p class="text-gray-600 dark:text-gray-400">Edit post content and intervals</p>
+                <button id="add-post-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                    <i class="fas fa-plus mr-2"></i>Add Post
+                </button>
+            </div>
+            <div id="posts-list" class="space-y-4">
+                <!-- Posts will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Automated Posting Control
+async function updateStatus() {
+    try {
+        const response = await fetch('/api/status');
+        const status = await response.json();
+        
+        // Update status indicators
+        document.getElementById('insta-status').className = `w-3 h-3 rounded-full ${status.insta_running ? 'bg-green-500' : 'bg-gray-400'}`;
+        document.getElementById('suite-status').className = `w-3 h-3 rounded-full ${status.suite_running ? 'bg-green-500' : 'bg-gray-400'}`;
+        document.getElementById('investments-status').className = `w-3 h-3 rounded-full ${status.investments_running ? 'bg-green-500' : 'bg-gray-400'}`;
+        
+        // Update buttons
+        document.getElementById('insta-start').disabled = status.insta_running;
+        document.getElementById('insta-stop').disabled = !status.insta_running;
+        document.getElementById('suite-start').disabled = status.suite_running;
+        document.getElementById('suite-stop').disabled = !status.suite_running;
+        document.getElementById('investments-start').disabled = status.investments_running;
+        document.getElementById('investments-stop').disabled = !status.investments_running;
+        
+        // Update loop checkboxes
+        document.getElementById('suite-loop').checked = status.suite_loop;
+        document.getElementById('investments-loop').checked = status.investments_loop;
+        
+        // Update stats
+        updateStats();
+    } catch (error) {
+        console.error('Error updating status:', error);
+    }
+}
+
+async function updateStats() {
+    try {
+        const [suiteRes, investmentsRes, instaRes] = await Promise.all([
+            fetch('/api/posts/suite'),
+            fetch('/api/posts/investments'),
+            fetch('/api/posts/insta')
+        ]);
+        
+        const suitePosts = await suiteRes.json();
+        const investmentsPosts = await investmentsRes.json();
+        const instaPosts = await instaRes.json();
+        
+        document.getElementById('suite-count').textContent = suitePosts.length;
+        document.getElementById('investments-count').textContent = investmentsPosts.length;
+        document.getElementById('insta-count').textContent = instaPosts.length;
+        
+        const statusRes = await fetch('/api/status');
+        const status = await statusRes.json();
+        const activeLoops = [status.suite_running && status.suite_loop, status.investments_running && status.investments_loop].filter(Boolean).length;
+        document.getElementById('active-loops').textContent = activeLoops;
+    } catch (error) {
+        console.error('Error updating stats:', error);
+    }
+}
+
+// Control functions
+async function controlPosting(action, category) {
+    try {
+        const response = await fetch(`/api/control/${action}/${category}`, { method: 'POST' });
+        const result = await response.json();
+        if (response.ok) {
+            updateStatus();
+        } else {
+            alert(`Error: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+async function controlAll(action) {
+    const categories = ['insta', 'suite', 'investments'];
+    for (const category of categories) {
+        await controlPosting(action, category);
+    }
+}
+
+async function setLoop(category) {
+    const checkbox = document.getElementById(`${category}-loop`);
+    try {
+        const response = await fetch(`/api/loop/${category}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ loop: checkbox.checked })
+        });
+        await response.json();
+    } catch (error) {
+        console.error('Error setting loop:', error);
+    }
+}
+
+// Manage Posts Modal
+let currentCategory = '';
+
+function managePosts(category) {
+    currentCategory = category;
+    document.getElementById('modal-category-title').textContent = category.charAt(0).toUpperCase() + category.slice(1);
+    document.getElementById('posts-modal').classList.remove('hidden');
+    loadPosts();
+}
+
+document.getElementById('close-posts-modal').addEventListener('click', () => {
+    document.getElementById('posts-modal').classList.add('hidden');
+});
+
+document.getElementById('add-post-btn').addEventListener('click', () => {
+    addNewPost();
+});
+
+// Event listeners
+document.getElementById('insta-start').addEventListener('click', () => controlPosting('start', 'insta'));
+document.getElementById('insta-stop').addEventListener('click', () => controlPosting('stop', 'insta'));
+document.getElementById('suite-start').addEventListener('click', () => controlPosting('start', 'suite'));
+document.getElementById('suite-stop').addEventListener('click', () => controlPosting('stop', 'suite'));
+document.getElementById('investments-start').addEventListener('click', () => controlPosting('start', 'investments'));
+document.getElementById('investments-stop').addEventListener('click', () => controlPosting('stop', 'investments'));
+
+document.getElementById('control-all-start').addEventListener('click', () => controlAll('start'));
+document.getElementById('control-all-stop').addEventListener('click', () => controlAll('stop'));
+
+document.getElementById('suite-loop').addEventListener('change', () => setLoop('suite'));
+document.getElementById('investments-loop').addEventListener('change', () => setLoop('investments'));
+
+async function loadPosts() {
+    try {
+        const response = await fetch(`/api/posts/${currentCategory}`);
+        const posts = await response.json();
+        
+        const postsList = document.getElementById('posts-list');
+        postsList.innerHTML = posts.map((post, index) => `
+            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div class="flex justify-between items-start mb-3">
+                    <h4 class="font-semibold text-gray-900 dark:text-white">Post ${index + 1}</h4>
+                    <button onclick="deletePost(${index})" class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
+                        <textarea id="message-${index}" rows="3" 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                            onchange="updatePost(${index})">${post.message || ''}</textarea>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Image Filename</label>
+                            <input type="text" id="image-${index}" value="${post.image_filename || ''}"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                onchange="updatePost(${index})">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Delay (minutes)</label>
+                            <input type="number" id="delay-${index}" value="${post.delay || 10}" min="1"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                onchange="updatePost(${index})">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading posts:', error);
+    }
+}
+
+async function updatePost(index) {
+    const message = document.getElementById(`message-${index}`).value;
+    const image_filename = document.getElementById(`image-${index}`).value;
+    const delay = document.getElementById(`delay-${index}`).value;
+    
+    try {
+        await fetch(`/api/posts/${currentCategory}/${index}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, image_filename, delay: parseInt(delay) })
+        });
+    } catch (error) {
+        console.error('Error updating post:', error);
+    }
+}
+
+async function deletePost(index) {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
+    try {
+        await fetch(`/api/posts/${currentCategory}/${index}`, { method: 'DELETE' });
+        loadPosts();
+        updateStats();
+    } catch (error) {
+        console.error('Error deleting post:', error);
+    }
+}
+
+async function addNewPost() {
+    const message = prompt('Enter post message:');
+    if (!message) return;
+    
+    const image_filename = prompt('Enter image filename (optional):') || '';
+    const delay = parseInt(prompt('Enter delay in minutes:', '10')) || 10;
+    
+    try {
+        await fetch(`/api/posts/${currentCategory}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, image_filename, delay })
+        });
+        loadPosts();
+        updateStats();
+    } catch (error) {
+        console.error('Error adding post:', error);
+    }
+}
+
+// Initial status update
+updateStatus();
+
+// Update status every 5 seconds
+setInterval(updateStatus, 5000);
+</script>
+{% endblock %}

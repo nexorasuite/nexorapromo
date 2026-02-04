@@ -20,6 +20,10 @@ insta_thread = None
 suite_thread = None
 investments_thread = None
 
+# Global loop control
+suite_loop = True
+investments_loop = True
+
 def load_posts(filepath):
     try:
         with open(filepath, 'r') as f:
@@ -140,6 +144,7 @@ def control_posting(action, category):
     elif category == 'suite':
         if action == 'start' and not suite_running:
             import nexora_suite
+            nexora_suite.LOOP = suite_loop
             suite_thread = threading.Thread(target=nexora_suite.run_nz, daemon=True)
             suite_thread.start()
             suite_running = True
@@ -153,6 +158,7 @@ def control_posting(action, category):
     elif category == 'investments':
         if action == 'start' and not investments_running:
             import nexora_investments
+            nexora_investments.LOOP = investments_loop
             investments_thread = threading.Thread(target=nexora_investments.run_tour, daemon=True)
             investments_thread.start()
             investments_running = True
@@ -181,8 +187,29 @@ def get_status():
     return jsonify({
         'insta_running': insta_running,
         'suite_running': suite_running,
-        'investments_running': investments_running
+        'investments_running': investments_running,
+        'suite_loop': suite_loop,
+        'investments_loop': investments_loop
     })
+
+@app.route('/api/loop/<category>', methods=['POST'])
+def set_loop(category):
+    global suite_loop, investments_loop
+    data = request.get_json()
+    loop = data.get('loop', True)
+    
+    if category == 'suite':
+        suite_loop = loop
+        return jsonify({'success': True, 'suite_loop': suite_loop})
+    elif category == 'investments':
+        investments_loop = loop
+        return jsonify({'success': True, 'investments_loop': investments_loop})
+    else:
+        return jsonify({'error': 'Invalid category'}), 400
+
+@app.route('/automated')
+def automated():
+    return render_template('automated.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
